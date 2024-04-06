@@ -1,0 +1,8 @@
+# Ignore Jupyter Notebook checkpoints
+*.ipynb_checkpoints/
+
+# Ignore all files in the data directory
+data/*
+
+# Ignore all files about IntelliJ IDEA
+*.idea
