@@ -35,4 +35,28 @@ After the data is cleaned and prepared, the project will involve training, tunin
 - [x] Splits the data into feature (**`X`**) and label (**`y`**) arrays.
 - [x] Uses **`train_test_split`** twice to create a train set (60% of the data), a validation set (20%), and a test set (20%).
 - [x] Saves the training, validation, and test sets to an **`.npz`** file, which can then be loaded for training.
+# Machine Learning Model Development
 
+The goal is to select and prototype suitable machine learning algorithms for predicting customer churn for a subscription-based telco service. This involves evaluating various models to identify the most effective approach for this specific churn prediction task.
+
+## Initial Model Prototyping
+
+Several models were prototyped to assess their suitability and performance for the churn prediction task. These models can be built using standard libraries with minimal effort. If the dataset and preprocessing required vary significantly from one model to another, resulting in considerable training effort, we must stick to theoretical concepts. This approach involves selecting a few ML algorithms well-suited for the task and limiting the number of models tried. But in this case following models were prototyped:
+
+
+- [x] **Logistic Regression Model Prototyping**
+- [x] **Random Forest Model Prototyping**
+- [x] **XGBoost Model Prototyping**
+- [x] **DNN Model Prototyping**
+- [x] **CNN for Tabular Data Prototyping**
+
+## Evaluation Metrics
+
+For each prototyped model, several key metrics were considered to evaluate performance, including accuracy, precision, recall, and the confusion matrix. These metrics provide a comprehensive view of each model's strengths and weaknesses in predicting customer churn. Based on those metrics, the best models for Vertex AI Vizier hyperparameter tuning will be selected.
+
+# **Vertex AI Training, Tuning, and Deployment**
+- [ ]  **Training XGBoost Model on Vertex AI**: Train the XGBoost Model on Vertex AI as a custom training job.
+- [ ]  **Training DNN Model on Vertex AI**: Train the DNN Model on Vertex AI as a custom training job.
+- [ ]  **Tuning XGBoost Model on Vertex AI**: Tune the XGBoost Model on Vertex AI using Vizier hyperparameter tuning.
+- [ ]  **Tuning DNN Model on Vertex AI**: Tune the DNN Model on Vertex AI as part of a custom training job.
+- [ ]  **Deployment**: Deploy the model as Vertex AI model endpoints for predictions.
