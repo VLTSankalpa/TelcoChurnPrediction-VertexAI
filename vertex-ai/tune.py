@@ -1,3 +1,4 @@
+
 import xgboost as xgb
 import numpy as np
 import pandas as pd
@@ -12,7 +13,18 @@ from sklearn.metrics import (
 import time
 
 
+# Function to load npz file from Google Cloud Storag
 def load_npz_from_gcs(bucket_name, file_path):
+    """
+    Load a numpy NpzFile object from a file in Google Cloud Storage.
+
+    Parameters:
+    - bucket_name: str. The name of the GCS bucket where the file is stored.
+    - file_path: str. The path to the file in the GCS bucket.
+
+    Returns:
+    - np.load(data_file): NpzFile. The data loaded from the file.
+    """
     storage_client = storage.Client()  # Create a client to access the Google Cloud Storage service.
     bucket = storage_client.get_bucket(bucket_name)  # Create a bucket object for the specified bucket.
     blob = bucket.blob(file_path)  # Create a blob object for the specified file path.
@@ -21,7 +33,16 @@ def load_npz_from_gcs(bucket_name, file_path):
     return np.load(data_file)   # return the data as a numpy NpzFile object.
 
 
+# Function to upload a file to Google Cloud Storage
 def upload_to_gcs(bucket_name, source_file_name, destination_blob_name):
+    """
+    Upload a file to Google Cloud Storage.
+
+    Parameters:
+    - bucket_name: str. The name of the GCS bucket where the file will be stored.
+    - source_file_name: str. The path to the file on the local system.
+    - destination_blob_name: str. The path where the file will be stored in the GCS bucket.
+    """
     client = storage.Client()
     bucket = client.bucket(bucket_name)
     blob = bucket.blob(destination_blob_name)
@@ -29,7 +50,14 @@ def upload_to_gcs(bucket_name, source_file_name, destination_blob_name):
     print(f"File {source_file_name} uploaded to {destination_blob_name}.")
 
 
+# Function to parse command line arguments
 def parse_args():
+    """
+    Parse command line arguments.
+
+    Returns:
+    - args: Namespace. The parsed command line arguments.
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument('--bucket_name', help='Name of the GCS bucket', required=True)
     parser.add_argument('--file_path', help='Path to data', required=True)
@@ -42,21 +70,22 @@ def parse_args():
     return parser.parse_args()
 
 
-def evaluate_model(timestamp, y_true, y_pred, y_pred_proba=None, params=None):
+# Function to manage model metadata
+def generate_model_metadata(timestamp, y_true, y_pred, y_pred_proba=None, hyperparameters=None):
     """
-    Evaluate a model on various performance metrics.
+    Generate metadata for a model, including various performance metrics and hyperparameters.
 
     Parameters:
-    - model_name: str. Name of the model being evaluated.
+    - timestamp: str. Unix timestamp.
     - y_true: array-like. True labels.
     - y_pred: array-like. Predicted labels.
     - y_pred_proba: array-like (default None). Predicted probabilities for the positive class.
-    - params: dict (default None). Hyperparameters of the model.
+    - hyperparameters: dict (default None). Hyperparameters of the model.
 
     Returns:
-    - A dictionary with metric names as keys and their corresponding values.
+    - metadata: dict. A dictionary with metric names as keys and their corresponding values, as well as the model's hyperparameters.
     """
-    metrics = {
+    metadata = {
         'Unix Time': timestamp,
         'Confusion Matrix': confusion_matrix(y_true, y_pred),
         'Precision': precision_score(y_true, y_pred),
@@ -65,20 +94,21 @@ def evaluate_model(timestamp, y_true, y_pred, y_pred_proba=None, params=None):
         'F1-Score': f1_score(y_true, y_pred),
         'AUC-ROC': roc_auc_score(y_true, y_pred_proba) if y_pred_proba is not None else 'N/A',
         'AUC-PR': average_precision_score(y_true, y_pred_proba) if y_pred_proba is not None else 'N/A',
-        'max_depth': params['max_depth'],
-        'eta': params['eta'],
-        'lambda': params['lambda'],
-        'alpha': params['alpha'],
-        'subsample': params['subsample'],
-        'colsample_bytree': params['colsample_bytree']
     }
 
-    return metrics
+    if hyperparameters is not None:
+        metadata.update(hyperparameters)
+
+    return metadata
 
 
+# Function to print the evaluation metrics
 def print_evaluation(metrics):
     """
     Prints the evaluation metrics from the evaluate_model function.
+
+    Parameters:
+    - metrics: dict. The metrics to print.
     """
     for key, value in metrics.items():
         if key != 'Model':
@@ -88,7 +118,11 @@ def print_evaluation(metrics):
     print("\n")  # New line for better readability between model evaluations
 
 
+# Main function
 def main():
+    """
+    Main function to run the script.
+    """
     args = parse_args()
     data = load_npz_from_gcs(args.bucket_name, args.file_path)
 
@@ -131,7 +165,7 @@ def main():
     unix_timestamp_str = str(unix_timestamp).replace('.', '')
 
     # Evaluate the model
-    xgb_metadata = evaluate_model(unix_timestamp, y_test, y_pred_binary, y_pred, params)
+    xgb_metadata = generate_model_metadata(unix_timestamp, y_test, y_pred_binary, y_pred, params)
     print_evaluation(xgb_metadata)
 
     # Report the RMSE to hyperparameter tuning service
@@ -152,11 +186,11 @@ def main():
     # After training and saving the model...
     model.save_model(f'xgboost_model{unix_timestamp_str}.json')
 
-    # Specify your desired GCS path for the model
+    # GCS path for the model and Metadata
     gcs_model_path = f'model/xgboost_model{unix_timestamp_str}.json'
     gcs_metrices_path = f'metadata/xgb_metadata{unix_timestamp_str}.csv'
 
-    # Upload the model to GCS
+    # Upload the model and Metadata to GCS
     upload_to_gcs(args.bucket_name, f'xgboost_model{unix_timestamp_str}.json', gcs_model_path)
     upload_to_gcs(args.bucket_name, f'xgb_metadata{unix_timestamp_str}.csv', gcs_metrices_path)
 
