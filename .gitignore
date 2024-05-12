@@ -6,3 +6,6 @@ data/*
 
 # Ignore all files about IntelliJ IDEA
 *.idea
+
+
+.DS_Store
